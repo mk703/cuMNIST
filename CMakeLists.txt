@@ -18,6 +18,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/utils
     ${CMAKE_SOURCE_DIR}/ops
+    ${CMAKE_SOURCE_DIR}/ops/optional_ops
     /usr/include           # 添加 zlib 头文件路径
 )
 

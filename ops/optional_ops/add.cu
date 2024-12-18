@@ -4,7 +4,7 @@
 
 namespace black_manbo
 {
-	__global__ void add_kernel(float* a, float* b, float* c, int N)
+	__global__ void add_kernel(const float* __restrict__ a, const float* __restrict__ b, float* __restrict__ c, int N)
 	{
 		int idx = blockIdx.x * blockDim.x + threadIdx.x;
 		if(idx < N)

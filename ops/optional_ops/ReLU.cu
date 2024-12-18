@@ -4,7 +4,7 @@
 
 namespace black_manbo
 {
-	__global__ void relu_kernel(float* a, float* b, int N)
+	__global__ void relu_kernel(float* __restrict__ a, float* __restrict__ b, int N)
 	{
 		int idx = blockIdx.x * blockDim.x + threadIdx.x;
 		if(idx < N)

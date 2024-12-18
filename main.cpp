@@ -10,7 +10,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-#define BATCH_SIZE 1
+#define BATCH_SIZE 100
 #define INPUT_SIZE 784
 #define UP_PROJECTION_SIZE 3072
 #define DOWN_PROJECTION_SIZE 128
@@ -57,14 +57,22 @@ int main(int argc, char **argv)
     float *x_test = new float[BATCH_SIZE * INPUT_SIZE];
     std::cout << argv[1] << std:: endl;
     read(argv[1], x_test);
+
+
+    cudaDeviceSynchronize();
     cudaMemcpy(data[0], x_test, BATCH_SIZE * INPUT_SIZE * sizeof(float), cudaMemcpyHostToDevice);
 
-    for(int i = 0;i < 28;i++)
+    for(int k = 0;k < BATCH_SIZE;k++)
     {
-        for(int j = 0;j < 28;j++)
-            std::cout << ((x_test[i * 28 + j] > 0.5) ? 1 : 0) << " ";
+        for(int i = 0;i < 28;i++)
+        {
+            for(int j = 0;j < 28;j++)
+                std::cout << ((x_test[k * 784 + i * 28 + j] > 0.5) ? 1 : 0) << " ";
+            std::cout << std::endl;
+        }
         std::cout << std::endl;
     }
+    
     
     black_manbo::matmul_kernel_launcher(data[0], d_dense_kernel[0], data[1], BATCH_SIZE, UP_PROJECTION_SIZE, INPUT_SIZE);
     black_manbo::add_kernel_launcher(data[1], d_dense_bias[0], data[1], BATCH_SIZE * UP_PROJECTION_SIZE);
@@ -73,7 +81,7 @@ int main(int argc, char **argv)
     black_manbo::add_kernel_launcher(data[2], d_dense_bias[1], data[2], BATCH_SIZE * DOWN_PROJECTION_SIZE);
     black_manbo::matmul_kernel_launcher(data[2], d_dense_kernel[2], data[3], BATCH_SIZE, OUTPUT_SIZE, DOWN_PROJECTION_SIZE);
     black_manbo::add_kernel_launcher(data[3], d_dense_bias[2], data[3], BATCH_SIZE * OUTPUT_SIZE);
-    black_manbo::softmax_kernel_launcher(data[3], data[3], BATCH_SIZE * OUTPUT_SIZE);
+    black_manbo::softmax_kernel_launcher(data[3], data[3], BATCH_SIZE * OUTPUT_SIZE, OUTPUT_SIZE);
 
     float * result = new float[BATCH_SIZE * OUTPUT_SIZE];
     cudaMemcpy(result, data[3], BATCH_SIZE * OUTPUT_SIZE * sizeof(float), cudaMemcpyDeviceToHost);

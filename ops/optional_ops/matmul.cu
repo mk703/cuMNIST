@@ -7,7 +7,7 @@
 
 namespace black_manbo
 {
-	__global__ void matmul_kernel(float* a, float* b, float* c, int M, int N, int K)
+	__global__ void matmul_kernel(float* const __restrict__ a, const float* __restrict__ b, float* __restrict__ c, int M, int N, int K)
     {
         extern __shared__ float shared_mem[];
 		float* shared_a = shared_mem;

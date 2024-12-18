@@ -4,7 +4,7 @@
 
 namespace black_manbo
 {
-	__global__ void softmax_kernel(float* a, float* b, int N)
+	__global__ void softmax_kernel(float* __restrict__ a, float* __restrict__ b, int N)
 	{
 		int idx = blockIdx.x * blockDim.x + threadIdx.x;
 		if(idx >= N) return;
@@ -22,9 +22,10 @@ namespace black_manbo
 			b[i] /= sum;
 	}
 
-	void softmax_kernel_launcher(float* d_a, float* d_b, int N)
+	void softmax_kernel_launcher(float* d_a, float* d_b, int N, int M)
 	{
-		softmax_kernel<<<(N + 255) / 256, 256>>>(d_a, d_b, N);
+		for(int i = 0;i < N / M; i ++)
+			softmax_kernel<<<(M + 255) / 256, 256>>>(d_a + i * M, d_b + i * M, M);
 		cudaDeviceSynchronize();
 	}
 }
