@@ -5,11 +5,11 @@
 
 namespace manbo
 {
-	class matmul : public ops
+	class MatMul : public ops
 	{
 		//M * K, K * N, M * N
 		public:
-			void init(int M, int N, int K)
+			MatMul(int M, int N, int K)
 			{
 				this->M = M;
 				this->N = N;

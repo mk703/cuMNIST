@@ -1,14 +1,10 @@
 #include <cuda_runtime.h>
 #include <cstring>
 #include <fstream>
+#include "manbo.hpp"
+#include "optional_ops.h"
 #include "ops.cuh"
 #include "utils/cnpy.h"
-
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
 
 #define BATCH_SIZE 100
 #define INPUT_SIZE 784
@@ -18,7 +14,7 @@
 
 int M[3] = {INPUT_SIZE, UP_PROJECTION_SIZE, DOWN_PROJECTION_SIZE};
 int N[3] = {UP_PROJECTION_SIZE, DOWN_PROJECTION_SIZE, OUTPUT_SIZE};
-int data_size[4] = {BATCH_SIZE * INPUT_SIZE, BATCH_SIZE * UP_PROJECTION_SIZE, BATCH_SIZE * DOWN_PROJECTION_SIZE, BATCH_SIZE * OUTPUT_SIZE};
+int data_size[4] = {INPUT_SIZE, UP_PROJECTION_SIZE, DOWN_PROJECTION_SIZE, OUTPUT_SIZE};
 
 void read(char* str_idx, float *x_test)
 {
@@ -38,55 +34,53 @@ void read(char* str_idx, float *x_test)
         x_test[i - idx * INPUT_SIZE] = data[i];
 }
 
-void model_runner()
+cnpy::NpyArray arr[3][2];
 
 int main(int argc, char **argv)
 {
-    float *d_dense_bias[3], *d_dense_kernel[3], *data[4], *tmp, *tmp2;
-
     for(int i = 0; i < 3; i++)
     {
-        cudaMalloc((void **)&d_dense_bias[i], N[i] * sizeof(float));
-        cudaMalloc((void **)&d_dense_kernel[i], M[i] * N[i] * sizeof(float));
-        cnpy::NpyArray arr = cnpy::npy_load("../model/dense_bias_" + std::to_string(i) + ".npy");
-        cudaMemcpy(d_dense_bias[i], arr.data<float>(), N[i] * sizeof(float), cudaMemcpyHostToDevice);
-        arr = cnpy::npy_load("../model/dense_kernel_" + std::to_string(i) + ".npy");
-        cudaMemcpy(d_dense_kernel[i], arr.data<float>(), M[i] * N[i] * sizeof(float), cudaMemcpyHostToDevice);
+        arr[i][0] = cnpy::npy_load("../model/dense_bias_" + std::to_string(i) + ".npy");
+        arr[i][1] = cnpy::npy_load("../model/dense_kernel_" + std::to_string(i) + ".npy");
+        //cudaMemcpy(d_dense_kernel[i], arr.data<float>(), M[i] * N[i] * sizeof(float), cudaMemcpyHostToDevice);
     }
-    for(int i = 0; i < 4;i++)
-        cudaMalloc((void **)&data[i], data_size[i] * sizeof(float));
 
     float *x_test = new float[BATCH_SIZE * INPUT_SIZE];
-    std::cout << argv[1] << std:: endl;
+    float *result = new float[BATCH_SIZE * OUTPUT_SIZE];
     read(argv[1], x_test);
-
-
-    cudaDeviceSynchronize();
-    cudaMemcpy(data[0], x_test, BATCH_SIZE * INPUT_SIZE * sizeof(float), cudaMemcpyHostToDevice);
-
-    for(int k = 0;k < BATCH_SIZE;k++)
-    {
-        for(int i = 0;i < 28;i++)
-        {
-            for(int j = 0;j < 28;j++)
-                std::cout << ((x_test[k * 784 + i * 28 + j] > 0.5) ? 1 : 0) << " ";
-            std::cout << std::endl;
-        }
-        std::cout << std::endl;
-    }
     
-    
-    black_manbo::matmul_kernel_launcher(data[0], d_dense_kernel[0], data[1], BATCH_SIZE, UP_PROJECTION_SIZE, INPUT_SIZE);
-    black_manbo::add_kernel_launcher(data[1], d_dense_bias[0], data[1], BATCH_SIZE * UP_PROJECTION_SIZE);
-    black_manbo::relu_kernel_launcher(data[1], data[1], BATCH_SIZE * UP_PROJECTION_SIZE);
-    black_manbo::matmul_kernel_launcher(data[1], d_dense_kernel[1], data[2], BATCH_SIZE, DOWN_PROJECTION_SIZE, UP_PROJECTION_SIZE);
-    black_manbo::add_kernel_launcher(data[2], d_dense_bias[1], data[2], BATCH_SIZE * DOWN_PROJECTION_SIZE);
-    black_manbo::matmul_kernel_launcher(data[2], d_dense_kernel[2], data[3], BATCH_SIZE, OUTPUT_SIZE, DOWN_PROJECTION_SIZE);
-    black_manbo::add_kernel_launcher(data[3], d_dense_bias[2], data[3], BATCH_SIZE * OUTPUT_SIZE);
-    black_manbo::softmax_kernel_launcher(data[3], data[3], BATCH_SIZE * OUTPUT_SIZE, OUTPUT_SIZE);
+    manbo::Graph graph;
+    graph.add_op(manbo::CopyH2D(x_test, BATCH_SIZE * INPUT_SIZE, INPUT_SIZE));//0
+    graph.add_op(manbo::MatMul(1, UP_PROJECTION_SIZE, INPUT_SIZE));
+    graph.add_op(manbo::Add(UP_PROJECTION_SIZE));
+    graph.add_op(manbo::ReLU(UP_PROJECTION_SIZE));//3
+    graph.add_op(manbo::MatMul(1, DOWN_PROJECTION_SIZE, UP_PROJECTION_SIZE));
+    graph.add_op(manbo::Add(DOWN_PROJECTION_SIZE));
+    graph.add_op(manbo::MatMul(1, OUTPUT_SIZE, DOWN_PROJECTION_SIZE));//6
+    graph.add_op(manbo::Add(OUTPUT_SIZE));
+    graph.add_op(manbo::SoftMax(OUTPUT_SIZE, 1));
+    graph.add_op(manbo::CopyD2H(result, BATCH_SIZE * OUTPUT_SIZE, OUTPUT_SIZE));//9
+    //tensor(float *data,ops *in_ops, std::vector<ops *>out_ops, int size, bool is_const = false)
+    graph.add_tensor(graph.op_set[0], {&graph.op_set[1]}, data_size[0]);
+    graph.add_tensor(graph.op_set[1], {&graph.op_set[2]}, data_size[1]);
+    graph.add_tensor(graph.op_set[2], {&graph.op_set[3]}, data_size[1]);
+    graph.add_tensor(graph.op_set[3], {&graph.op_set[4]}, data_size[1]);
+    graph.add_tensor(graph.op_set[4], {&graph.op_set[5]}, data_size[2]);
+    graph.add_tensor(graph.op_set[5], {&graph.op_set[6]}, data_size[2]);
+    graph.add_tensor(graph.op_set[6], {&graph.op_set[7]}, data_size[2]);
+    graph.add_tensor(graph.op_set[7], {&graph.op_set[8]}, data_size[3]);
+    graph.add_tensor(graph.op_set[8], {&graph.op_set[9]}, data_size[3]);
 
-    float * result = new float[BATCH_SIZE * OUTPUT_SIZE];
-    cudaMemcpy(result, data[3], BATCH_SIZE * OUTPUT_SIZE * sizeof(float), cudaMemcpyDeviceToHost);
+    graph.add_tensor(arr[0][0].data<float>(), {&graph.op_set[2]}, data_size[1], true);
+    graph.add_tensor(arr[0][1].data<float>(), {&graph.op_set[1]}, M[0] * N[0], true);
+    graph.add_tensor(arr[1][0].data<float>(), {&graph.op_set[5]}, data_size[2], true);
+    graph.add_tensor(arr[1][1].data<float>(), {&graph.op_set[4]}, M[1] * N[1], true);
+    graph.add_tensor(arr[2][0].data<float>(), {&graph.op_set[8]}, data_size[3], true);
+    graph.add_tensor(arr[2][1].data<float>(), {&graph.op_set[7]}, M[2] * N[2], true);
+
+    manbo::Scheduler scheduler;
+    scheduler.graph = &graph;
+    scheduler.run();
 
     for(int i = 0; i < BATCH_SIZE; i++)
     {
@@ -100,14 +94,5 @@ int main(int argc, char **argv)
             
         std::cout << "Prediction: " << max_idx << std::endl;
     }
-
-
-    for(int i = 0; i < 3; i++)
-    {
-        cudaFree(d_dense_bias[i]);
-        cudaFree(d_dense_kernel[i]);
-    }
-    for(int i = 0; i < 4; i++)
-        cudaFree(data[i]);
     return 0;
 }

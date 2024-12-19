@@ -1,10 +1,5 @@
 #include <cuda_runtime.h>
 #include <stdexcept>
-#include "add.cuh"
-#include "matmul.cuh"
-#include "SoftMax.cuh"
-#include "conv2d.cuh"
-#include "ReLU.cuh"
 
 namespace manbo
 {
@@ -56,6 +51,14 @@ namespace manbo
 			int size;
 			int left_dpd;//依赖该张量的操作，但是还没有使用该张量的操作数
 			bool is_const;//常量，被存下来的参数
+			tensor(float *data, ops *in_ops, std::vector<ops *>out_ops, int size, bool is_const = false)
+			{
+				this->data = data;
+				this->in_ops = in_ops;
+				this->out_ops = out_ops;
+				this->size = size;
+				this->is_const = is_const;
+			}
 			bool read_ready()
 			{
 				return data != NULL;
@@ -110,7 +113,8 @@ namespace manbo
 						in_tensor->clear_data();
 				}
 			}
-		private:
+			friend class Scheduler;
+		protected:
 			ops *op;
 			std::vector<tensor *> in;
 			std::vector<tensor *> out;

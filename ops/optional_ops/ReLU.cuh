@@ -5,10 +5,10 @@
 
 namespace manbo
 {
-	class relu : public ops
+	class ReLU : public ops
 	{
 		public:
-			void init(int N)
+			ReLU(int N)
 			{
 				this->N = N;
 			}

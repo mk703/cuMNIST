@@ -16,6 +16,7 @@ set(CMAKE_CUDA_ARCHITECTURES 86)
 # 包含路径
 include_directories(
     ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/utils
     ${CMAKE_SOURCE_DIR}/ops
     ${CMAKE_SOURCE_DIR}/ops/optional_ops
@@ -23,10 +24,12 @@ include_directories(
 )
 
 file(GLOB OPS_SOURCES ${CMAKE_SOURCE_DIR}/ops/*.cu)
+file(GLOB SRC ${CMAKE_SOURCE_DIR}/src/*.cpp)
 # 源文件列表
 set(SOURCES
     main.cpp
     ${OPS_SOURCES}
+    ${SRC}
     utils/cnpy.cpp
 )
 

@@ -1,0 +1,7 @@
+#include "copyin.cu"
+#include "copyout.cu"
+#include "add.cuh"
+#include "matmul.cuh"
+#include "SoftMax.cuh"
+#include "conv2d.cuh"
+#include "ReLU.cuh"

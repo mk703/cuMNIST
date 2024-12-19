@@ -8,18 +8,24 @@
 
 namespace manbo
 {
-	class copyin : public ops
+	class CopyH2D : public ops
 	{
 		public:
-			void init(float * in, int in_size, int N)
+			CopyH2D(float * in, int in_size, int N)//需要保证in_size是N的整数倍
 			{
 				this->in = in;
 				this->in_size = in_size;
 				this->N = N;
 			}
+			bool execable()
+			{
+				if(times * N >= in_size)
+					return false;
+				return true;
+			}
 			void exec()
 			{
-				cudaMemcpyAsync(out[0]->data, in + times * N, N * sizeof(float), cudaMemcpyHostToDevice, stream);
+				cudaMemcpy(out[0]->data, in + times * N, N * sizeof(float), cudaMemcpyHostToDevice);
 				times++;
 			}
 			float *in;

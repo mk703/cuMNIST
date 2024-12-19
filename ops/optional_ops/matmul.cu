@@ -1,13 +1,13 @@
 #include <cuda_runtime.h>
 #include <math.h>
-#include <iostream>
 #include "ops.cuh"
+#include "optional_ops/matmul.cuh"
 
 //row y M, col x N
 
 namespace manbo
 {
-	__global__ void matmul_kernel(float* const __restrict__ a, const float* __restrict__ b, float* __restrict__ c, int M, int N, int K)
+	__global__ void MatMul::matmul_kernel(const float* __restrict__ a, const float* __restrict__ b, float* __restrict__ c, int M, int N, int K)
     {
         extern __shared__ float shared_mem[];
 		float* shared_a = shared_mem;
@@ -42,12 +42,12 @@ namespace manbo
 			c[row * N + col] = sum;
     }
 
-    void matmul_kernel_launcher(float* d_a, float* d_b, float* d_c, int M, int N, int K)
+    void MatMul::matmul_kernel_launcher(float* d_a, float* d_b, float* d_c, int M, int N, int K)
     {
         dim3 blockDim(16, 16);  
         dim3 gridDim((N + blockDim.x - 1) / blockDim.x, (M + blockDim.y - 1) / blockDim.y);
         size_t shared_mem_size = (blockDim.y * blockDim.x * 2) * sizeof(float);
         matmul_kernel<<<gridDim, blockDim, shared_mem_size>>>(d_a, d_b, d_c, M, N, K);
-        //cudaDeviceSynchronize();
+        cudaDeviceSynchronize();
 	}
 }

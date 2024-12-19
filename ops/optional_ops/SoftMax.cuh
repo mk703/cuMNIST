@@ -5,10 +5,10 @@
 
 namespace manbo
 {
-	class softmax : public ops
+	class SoftMax : public ops
 	{
 		public:
-			void init(int N, int M)//执行M次，每次对N个数进行softmax
+			SoftMax(int N, int M)//一共对N个数进行softmax，每次算M个
 			{
 				this->N = N;
 				this->M = M;

@@ -5,10 +5,10 @@
 
 namespace manbo
 {
-	class add : public ops
+	class Add : public ops
 	{
 		public:
-			void init(int N)
+			Add(int N)
 			{
 				this->N = N;
 			}

@@ -8,22 +8,29 @@
 
 namespace manbo
 {
-	class copyout : public ops
+	class CopyD2H : public ops
 	{
 		public:
-			void init(float * out, int N)
+			CopyD2H(float * out, int out_size, int N)//需要保证out_size是N的整数倍
 			{
-				this->in = in;
+				this->out = out;
+				this->out_size = out_size;
 				this->N = N;
+			}
+			bool execable()
+			{
+				if(times * N >= out_size)
+					return false;
+				return true;
 			}
 			void exec()
 			{
-				cudaMemcpyAsync(out[0]->data, in + times * N, N * sizeof(float), cudaMemcpyHostToDevice, stream);
+				cudaMemcpy(out + times * N, in[0]->data, N * sizeof(float), cudaMemcpyDeviceToHost);
 				times++;
 			}
-			float *in;
+			float *out;//在主机上的输出
 		private:
-			int N;
+			int N, out_size;
 			int times;
 	};
 }
