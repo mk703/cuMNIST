@@ -2,7 +2,7 @@
 #include <math.h>
 #include "ops.cuh"
 
-namespace black_manbo
+namespace manbo
 {
 	__global__ void relu_kernel(float* __restrict__ a, float* __restrict__ b, int N)
 	{
@@ -15,6 +15,6 @@ namespace black_manbo
 	void relu_kernel_launcher(float* d_a, float* d_b, int N)
 	{
 		relu_kernel<<<(N + 255) / 256, 256>>>(d_a, d_b, N);
-		cudaDeviceSynchronize();
+		//cudaDeviceSynchronize();
 	}
 }

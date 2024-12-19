@@ -2,7 +2,7 @@
 #include <math.h>
 #include "ops.cuh"
 
-namespace black_manbo
+namespace manbo
 {
 	__global__ void softmax_kernel(float* __restrict__ a, float* __restrict__ b, int N)
 	{
@@ -26,6 +26,6 @@ namespace black_manbo
 	{
 		for(int i = 0;i < N / M; i ++)
 			softmax_kernel<<<(M + 255) / 256, 256>>>(d_a + i * M, d_b + i * M, M);
-		cudaDeviceSynchronize();
+		//cudaDeviceSynchronize();
 	}
 }

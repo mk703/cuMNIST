@@ -5,7 +5,7 @@
 
 //row y M, col x N
 
-namespace black_manbo
+namespace manbo
 {
 	__global__ void matmul_kernel(float* const __restrict__ a, const float* __restrict__ b, float* __restrict__ c, int M, int N, int K)
     {
@@ -48,6 +48,6 @@ namespace black_manbo
         dim3 gridDim((N + blockDim.x - 1) / blockDim.x, (M + blockDim.y - 1) / blockDim.y);
         size_t shared_mem_size = (blockDim.y * blockDim.x * 2) * sizeof(float);
         matmul_kernel<<<gridDim, blockDim, shared_mem_size>>>(d_a, d_b, d_c, M, N, K);
-        cudaDeviceSynchronize();
+        //cudaDeviceSynchronize();
 	}
 }

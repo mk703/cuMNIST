@@ -38,6 +38,8 @@ void read(char* str_idx, float *x_test)
         x_test[i - idx * INPUT_SIZE] = data[i];
 }
 
+void model_runner()
+
 int main(int argc, char **argv)
 {
     float *d_dense_bias[3], *d_dense_kernel[3], *data[4], *tmp, *tmp2;

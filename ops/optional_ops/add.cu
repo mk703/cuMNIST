@@ -2,7 +2,7 @@
 #include <math.h>
 #include "ops.cuh"
 
-namespace black_manbo
+namespace manbo
 {
 	__global__ void add_kernel(const float* __restrict__ a, const float* __restrict__ b, float* __restrict__ c, int N)
 	{
@@ -14,6 +14,6 @@ namespace black_manbo
 	void add_kernel_launcher(float* d_a, float* d_b, float* d_c, int N)
 	{
 		add_kernel<<<(N + 255) / 256, 256>>>(d_a, d_b, d_c, N);
-		cudaDeviceSynchronize();
+		//cudaDeviceSynchronize();//等待所有线程结束
 	}
 }
