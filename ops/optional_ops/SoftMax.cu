@@ -5,13 +5,16 @@
 
 namespace manbo
 {
-	__global__ void SoftMax::softmax_kernel(float* __restrict__ a, float* __restrict__ b, int N)
+	__global__ void SoftMax::softmax_kernel(float* __restrict__ a, float* __restrict__ b, float* max, int N)
 	{
 		int idx = blockIdx.x * blockDim.x + threadIdx.x;
 		if(idx >= N) return;
-		float max = a[idx];
+		//用原子操作更新max
+		atomicMax(max, a[idx]);
+		__syncthreads();
+
 		for(int i = 0; i < N; i++)
-			if(a[i] > max)
+			if(a[i] > &max)
 				max = a[i];
 		float sum = 0;
 		for(int i = 0; i < N; i++)

@@ -19,7 +19,7 @@ namespace manbo
 			}
 		private:
 			int N, M;
-			__global__ void softmax_kernel(float* __restrict__ a, float* __restrict__ b, int N);
+			__global__ void softmax_kernel(float* __restrict__ a, float* __restrict__ b, float* max, int N);
 			void softmax_kernel_launcher(float* d_a, float* d_b, int N, int M);
 	};
 }

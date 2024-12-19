@@ -50,7 +50,7 @@ namespace manbo
 			std::vector<ops *>out_ops;
 			int size;
 			int left_dpd;//依赖该张量的操作，但是还没有使用该张量的操作数
-			bool is_const;//常量，被存下来的参数
+			bool is_const;//常量，表示这个张量是模型的参数
 			tensor(float *data, ops *in_ops, std::vector<ops *>out_ops, int size, bool is_const = false)
 			{
 				this->data = data;

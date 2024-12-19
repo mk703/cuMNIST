@@ -19,7 +19,7 @@ namespace manbo
 			}
 			bool execable()
 			{
-				if(times * N >= out_size)
+				if(times * N >= out_size || in[0]->data == NULL)
 					return false;
 				return true;
 			}
